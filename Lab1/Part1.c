@@ -5,26 +5,16 @@
  * Author : shirt
  */ 
 
+#include <stdbool.h>
 #include <avr/io.h>
 #include <stdint-gcc.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include "utils.h"
 
 #define LCDADDRESS 0xEC
 
-// Temporary global data
-const int sccDigits[10] = {0x1551, 0x0110, 0x1e11, 0x1B11, 0x0B50, 0x1B41, 0x1F41, 0x0111, 0x1F51, 0x0B51};
+static const int sccDigits[10] = {0x1551, 0x0110, 0x1e11, 0x1B11, 0x0B50, 0x1B41, 0x1F41, 0x0111, 0x1F51, 0x0B51};
 
-void setbits(uint8_t *ptr, int width, int start, uint8_t value)
-{
-	uint8_t mask = ~(1 << width) << start;
-	uint8_t data = (value << start) & mask;
-	*ptr = *ptr & ~mask;
-	*ptr = *ptr | data;
-}
-
-
-void init(void)
+void initLCD(void)
 {
 	
 	CLKPR = 0x80;
@@ -45,26 +35,25 @@ void init(void)
 
 void writeChar(char ch, int pos)
 {
-	
+	// If out of bounds, do nothing
 	if (pos > 5)
 	{
 		return;
 	}
 		
-	int offset = (pos % 2);
+	int offset = (pos % 2); //offset within a column
 	int column = pos / 2;
-	uint8_t mask = 0x0f;
 	uint8_t reset_mask;
 	uint8_t digit_nibble;
 	uint8_t cleared_nibble;
 	uint16_t digit;
 	uint8_t *addr = (uint8_t*) LCDADDRESS + column;
 	
-	
+	// if ch is not a digit, empty the position instead
 	if (isdigit(ch))
 	{
-		uint8_t index = ch - '0';
-		digit = sccDigits[index];
+		uint8_t index = ch - '0';	// Convert the character to an integer
+		digit = sccDigits[index];	// Use integer to index the SCC array
 	}
 	else
 	{
@@ -73,14 +62,13 @@ void writeChar(char ch, int pos)
 	
 	for(int i = 0; i < 4; i++)
 	{
-		reset_mask = (i>0) ? 0b0000 : 0b0110;
-		digit_nibble = (digit) & mask;
-		cleared_nibble = (*addr << 4*offset) & reset_mask;
-		digit_nibble = digit_nibble | cleared_nibble;
+		reset_mask = (i>0) ? 0b0000 : 0b0110;					// For LCDDR 0/1/2, preserve unused bits 1 and 2, otherwise preserve no bits
+		cleared_nibble = (*addr << 4*offset) & reset_mask;	// Use reset_mask to clear the relevant nibble in memory
+		digit_nibble = (digit) & 0x0f;						// Mask upper 4 bits
+		digit_nibble = digit_nibble | cleared_nibble;		// Combine the cleared nibble with masked nibble to preserve bits not used
 		setbits(addr, 4, 4*offset, digit_nibble);
-		
-		digit = digit >> 4;
-		addr+=5;
+		digit = digit >> 4;									// Shift right to get to the next nibble of the digit
+		addr+=5;											// Increment the address, makes sure we use LCDDRX, LCDDRX+5, LCDDRX+10, LCDDRX+15
 	}
 	
 }
@@ -88,13 +76,14 @@ void writeChar(char ch, int pos)
 void writeLong(long i)
 {
 	
-	long x = i;
-	int j = 5;
+	long x = i; 
+	int j = 5;	// max index
 	char digits[6];
 	
+	// Iterate downwards
 	while (x>0 && j >= 0)
 	{
-		int t = x % 10;
+		int t = x % 10;		
 		char ch = t + '0';
 		digits[j] = ch;
 		j--;
@@ -108,7 +97,7 @@ void writeLong(long i)
 	
 }
 
-void print_primes(long i)
+void primes(long i)
 {
 	while (1)
 	{
@@ -122,22 +111,17 @@ void print_primes(long i)
 
 int is_prime(long i)
 {
-	long n = i;
-	int counter = 0;
-	while (n>0)
+	long n = i-1;
+	
+	while (n>1)
 	{
 		if (i%n == 0)
 		{
-			counter++;
+			return 0;
 		}
 		n--;
 	}
-	
-	if (counter==2)
-	{
-		return 1;
-	}
-	return 0;
+	return 1;
 }
 
 

@@ -55,10 +55,10 @@ void set_segment(bool active)
 {
 	if (active)
 	{
-		LCDDR1 = 0x0;
+		LCDDR3 = 0x0;
 	}
 	else
 	{
-		LCDDR1 = 0x6;
+		LCDDR3 = 0x1;
 	}
 }

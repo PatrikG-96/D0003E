@@ -5,10 +5,6 @@
  *  Author: shirt
  */ 
 
-#include <avr/io.h>
-#include <stdint-gcc.h>
-#include <stdlib.h>
-#include <stdbool.h>
 
 void init(void);
 
@@ -16,6 +12,6 @@ void writeChar(char ch, int pos);
 
 void writeLong(long i);
 
-void print_primes(long i);
+void primes(long i);
 
 int is_prime(long i);
